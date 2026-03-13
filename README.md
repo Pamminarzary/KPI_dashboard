@@ -185,4 +185,4 @@ knowledge-search-dashboard/
 
 ### 🔹 Project Snapshot
 
-![snapshot of dashboard](https://github.com/Pamminarzary/Heartrate-Monitoring-using-rPPG/blob/main/homepage.png)
+![snapshot of dashboard](https://github.com/Pamminarzary/KPI_dashboard/blob/main/Screenshot%20(304).png)
