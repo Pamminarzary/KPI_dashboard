@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+data/index/
+data/processed/
+data/raw/
+data/search_logs.db
+data/metrics/experiments.csv
+*.pkl
+*.index
+node_modules/
+dist/
+.DS_Store

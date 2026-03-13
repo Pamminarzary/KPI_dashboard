@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Search Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    .sidebar { width: 220px; background: #1e293b; height: 100vh; position: fixed; left: 0; top: 0; padding: 24px 0; border-right: 1px solid #334155; }
+    .logo { padding: 0 20px 24px; font-size: 18px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; margin-bottom: 16px; }
+    .logo span { font-size: 12px; color: #94a3b8; display: block; font-weight: 400; }
+    .nav-item { padding: 10px 20px; cursor: pointer; border-radius: 0; color: #94a3b8; font-size: 14px; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+    .nav-item:hover, .nav-item.active { background: #0f172a; color: #38bdf8; border-left: 3px solid #38bdf8; }
+    .main { margin-left: 220px; padding: 32px; min-height: 100vh; }
+    .page-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #f1f5f9; }
+    .page-sub { color: #64748b; font-size: 14px; margin-bottom: 28px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+    .card-title { font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+    .search-box { display: flex; gap: 12px; margin-bottom: 20px; }
+    .search-input { flex: 1; padding: 14px 18px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #f1f5f9; font-size: 16px; outline: none; transition: border 0.2s; }
+    .search-input:focus { border-color: #38bdf8; }
+    .search-input::placeholder { color: #475569; }
+    .btn { padding: 12px 24px; background: #0ea5e9; border: none; border-radius: 10px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .btn:hover { background: #38bdf8; }
+    .btn:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+    .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 6px; }
+    .controls { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    .control-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .control-select { padding: 8px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 13px; cursor: pointer; }
+    .range-input { accent-color: #38bdf8; width: 120px; cursor: pointer; }
+    .result-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 18px; margin-bottom: 12px; transition: border 0.2s; }
+    .result-card:hover { border-color: #38bdf8; }
+    .result-title { font-size: 16px; font-weight: 600; color: #38bdf8; margin-bottom: 8px; }
+    .result-snippet { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 12px; }
+    .result-snippet b, .result-snippet strong { color: #fbbf24; font-weight: 700; }
+    .score-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-hybrid { background: #0c4a6e; color: #38bdf8; border: 1px solid #0369a1; }
+    .badge-bm25 { background: #14532d; color: #4ade80; border: 1px solid #166534; }
+    .badge-vector { background: #4c1d95; color: #c4b5fd; border: 1px solid #6d28d9; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 20px; text-align: center; }
+    .kpi-value { font-size: 32px; font-weight: 700; color: #38bdf8; }
+    .kpi-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th { text-align: left; padding: 10px 14px; color: #64748b; border-bottom: 1px solid #334155; font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    .table td { padding: 10px 14px; border-bottom: 1px solid #1e293b; color: #e2e8f0; }
+    .table tr:hover td { background: #1e293b; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .loading { text-align: center; padding: 40px; color: #64748b; }
+    .empty { text-align: center; padding: 40px; color: #475569; }
+    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; }
+    .alert-error { background: #450a0a; border: 1px solid #991b1b; color: #fca5a5; }
+    .alert-success { background: #052e16; border: 1px solid #166534; color: #86efac; }
+    .experiment-row td:nth-child(5), .experiment-row td:nth-child(6), .experiment-row td:nth-child(7) { font-weight: 600; }
+    .highlight-good { color: #4ade80; }
+    .highlight-mid { color: #fbbf24; }
+    .debug-log { background: #020617; border: 1px solid #334155; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; }
+    .log-line { padding: 4px 0; border-bottom: 1px solid #0f172a; color: #94a3b8; }
+    .log-line:last-child { border-bottom: none; }
+    .log-error { color: #f87171; }
+    .log-ok { color: #4ade80; }
+    .slider-value { font-weight: 700; color: #38bdf8; min-width: 30px; display: inline-block; }
+    .source-link { font-size: 11px; color: #475569; margin-top: 6px; }
+    .source-link a { color: #38bdf8; text-decoration: none; }
+    .no-results { text-align: center; padding: 60px 20px; color: #475569; }
+    .chart-container { height: 220px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+const API = "http://localhost:8000";
+
+// ---- Sidebar ----
+function Sidebar({ page, setPage }) {
+  const items = [
+    { id: "search", icon: "🔍", label: "Search" },
+    { id: "kpi", icon: "📊", label: "KPI Dashboard" },
+    { id: "eval", icon: "🧪", label: "Evaluation" },
+    { id: "debug", icon: "🐛", label: "Debug Logs" },
+  ];
+  return (
+    <div className="sidebar">
+      <div className="logo">
+        🔎 KnowledgeSearch
+        <span>Hybrid Search + KPI</span>
+      </div>
+      {items.map(item => (
+        <div key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => setPage(item.id)}>
+          <span>{item.icon}</span>{item.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- Search Page ----
+function SearchPage() {
+  const [query, setQuery] = useState("");
+  const [alpha, setAlpha] = useState(0.5);
+  const [topK, setTopK] = useState(10);
+  const [norm, setNorm] = useState("minmax");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [meta, setMeta] = useState(null);
+
+  const doSearch = async () => {
+    if (!query.trim()) return;
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API}/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, top_k: topK, alpha, normalization: norm })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Search failed");
+      setResults(data.results || []);
+      setMeta({ latency: data.latency_ms, count: data.result_count });
+    } catch (e) {
+      setError(e.message);
+      setResults([]);
+    } finally { setLoading(false); }
+  };
+
+  const scoreColor = (v) => v > 0.7 ? "#4ade80" : v > 0.4 ? "#fbbf24" : "#94a3b8";
+
+  return (
+    <div>
+      <div className="page-title">🔍 Hybrid Search</div>
+      <div className="page-sub">BM25 + Semantic vector search with configurable alpha blending</div>
+      <div className="card">
+        <div className="search-box">
+          <input className="search-input" placeholder="Search anything... e.g. machine learning, climate change" value={query}
+            onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && doSearch()} />
+          <button className="btn" onClick={doSearch} disabled={loading}>{loading ? "Searching..." : "Search"}</button>
+        </div>
+        <div className="controls">
+          <div className="control-group">
+            <span className="control-label">Alpha (BM25 weight) <span className="slider-value">{alpha.toFixed(2)}</span></span>
+            <input type="range" className="range-input" min="0" max="1" step="0.05" value={alpha} onChange={e => setAlpha(parseFloat(e.target.value))} />
+          </div>
+          <div className="control-group">
+            <span className="control-label">Top K</span>
+            <select className="control-select" value={topK} onChange={e => setTopK(parseInt(e.target.value))}>
+              {[5, 10, 20].map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+          <div className="control-group">
+            <span className="control-label">Normalization</span>
+            <select className="control-select" value={norm} onChange={e => setNorm(e.target.value)}>
+              <option value="minmax">Min-Max</option>
+              <option value="zscore">Z-Score</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      {error && <div className="alert alert-error">⚠️ {error}</div>}
+      {meta && (
+        <div style={{ color: "#64748b", fontSize: 13, marginBottom: 16 }}>
+          Found <strong style={{ color: "#38bdf8" }}>{meta.count}</strong> results in <strong style={{ color: "#38bdf8" }}>{meta.latency?.toFixed(1)}ms</strong>
+        </div>
+      )}
+      {loading && <div className="loading">🔄 Searching...</div>}
+      {!loading && results.length === 0 && query && !error && (
+        <div className="no-results">🔍 No results found for "{query}"</div>
+      )}
+      {results.map((r, i) => (
+        <div key={r.doc_id} className="result-card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div className="result-title">#{i+1} {r.title}</div>
+            <div style={{ fontSize: 11, color: "#475569" }}>{r.doc_id}</div>
+          </div>
+          <div className="result-snippet" dangerouslySetInnerHTML={{ __html: r.snippet?.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') }} />
+          <div className="score-badges">
+            <span className="badge badge-hybrid">🎯 Hybrid: {r.hybrid_score}</span>
+            <span className="badge badge-bm25">📝 BM25: {r.bm25_score}</span>
+            <span className="badge badge-vector">🧠 Vector: {r.vector_score?.toFixed(4)}</span>
+          </div>
+          {r.source && <div className="source-link"><a href={r.source} target="_blank">🔗 {r.source.substring(0, 60)}...</a></div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- KPI Dashboard ----
+function KPIPage() {
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/metrics/json`).then(r => r.json()).then(data => { setMetrics(data); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="loading">Loading metrics...</div>;
+  if (!metrics) return <div className="alert alert-error">Failed to load metrics. Is the API running?</div>;
+
+  const volData = metrics.volume_over_time?.slice(-12) || [];
+
+  return (
+    <div>
+      <div className="page-title">📊 KPI Dashboard</div>
+      <div className="page-sub">Real-time search analytics and performance metrics</div>
+      <div className="kpi-grid">
+        <div className="kpi-card"><div className="kpi-value">{metrics.total_requests}</div><div className="kpi-label">Total Requests</div></div>
+        <div className="kpi-card"><div className="kpi-value">{metrics.p50_ms}ms</div><div className="kpi-label">P50 Latency</div></div>
+        <div className="kpi-card"><div className="kpi-value">{metrics.p95_ms}ms</div><div className="kpi-label">P95 Latency</div></div>
+        <div className="kpi-card"><div className="kpi-value">{metrics.zero_result_queries?.length || 0}</div><div className="kpi-label">Zero-Result Queries</div></div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div className="card">
+          <div className="card-title">Top Queries</div>
+          {metrics.top_queries?.length > 0 ? (
+            <table className="table">
+              <thead><tr><th>Query</th><th>Count</th></tr></thead>
+              <tbody>
+                {metrics.top_queries.map((q, i) => (
+                  <tr key={i}><td>{q.query}</td><td><span className="badge badge-hybrid">{q.count}</span></td></tr>
+                ))}
+              </tbody>
+            </table>
+          ) : <div className="empty">No queries yet. Try searching!</div>}
+        </div>
+        <div className="card">
+          <div className="card-title">Zero-Result Queries</div>
+          {metrics.zero_result_queries?.length > 0 ? (
+            <div>{metrics.zero_result_queries.map((q, i) => <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid #334155", fontSize: 13, color: "#f87171" }}>❌ {q}</div>)}</div>
+          ) : <div className="empty">✅ No zero-result queries!</div>}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title">Request Volume Over Time</div>
+        {volData.length > 0 ? (
+          <div className="chart-container">
+            <Recharts.ResponsiveContainer width="100%" height="100%">
+              <Recharts.BarChart data={volData}>
+                <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <Recharts.XAxis dataKey="hour" tick={{ fill: "#64748b", fontSize: 11 }} />
+                <Recharts.YAxis tick={{ fill: "#64748b", fontSize: 11 }} />
+                <Recharts.Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} />
+                <Recharts.Bar dataKey="count" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+              </Recharts.BarChart>
+            </Recharts.ResponsiveContainer>
+          </div>
+        ) : <div className="empty">No volume data yet.</div>}
+      </div>
+    </div>
+  );
+}
+
+// ---- Evaluation Page ----
+function EvalPage() {
+  const [experiments, setExperiments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/eval/experiments`).then(r => r.json()).then(data => { setExperiments(data || []); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+
+  const scoreClass = (v) => v > 0.6 ? "highlight-good" : v > 0.3 ? "highlight-mid" : "";
+  const chartData = experiments.slice(-10).map((e, i) => ({ run: `Run ${i+1}`, ndcg: parseFloat(e.ndcg_at_10 || 0).toFixed(3), recall: parseFloat(e.recall_at_10 || 0).toFixed(3) }));
+
+  return (
+    <div>
+      <div className="page-title">🧪 Evaluation</div>
+      <div className="page-sub">nDCG@10, Recall@10, MRR@10 across experiments with varying alpha and models</div>
+
+      {chartData.length > 0 && (
+        <div className="card">
+          <div className="card-title">nDCG@10 Trend</div>
+          <div className="chart-container">
+            <Recharts.ResponsiveContainer width="100%" height="100%">
+              <Recharts.LineChart data={chartData}>
+                <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <Recharts.XAxis dataKey="run" tick={{ fill: "#64748b", fontSize: 11 }} />
+                <Recharts.YAxis domain={[0, 1]} tick={{ fill: "#64748b", fontSize: 11 }} />
+                <Recharts.Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} />
+                <Recharts.Legend />
+                <Recharts.Line type="monotone" dataKey="ndcg" stroke="#38bdf8" strokeWidth={2} dot={{ fill: "#38bdf8" }} />
+                <Recharts.Line type="monotone" dataKey="recall" stroke="#4ade80" strokeWidth={2} dot={{ fill: "#4ade80" }} />
+              </Recharts.LineChart>
+            </Recharts.ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="card-title">Experiment Results</div>
+        {loading ? <div className="loading">Loading...</div> : experiments.length === 0 ? (
+          <div className="empty">
+            <div style={{ marginBottom: 12 }}>No experiments yet.</div>
+            <code style={{ background: "#0f172a", padding: "8px 16px", borderRadius: 6, fontSize: 12 }}>python -m app.eval</code>
+          </div>
+        ) : (
+          <table className="table">
+            <thead><tr><th>Timestamp</th><th>Commit</th><th>Alpha</th><th>Norm</th><th>nDCG@10</th><th>Recall@10</th><th>MRR@10</th></tr></thead>
+            <tbody>
+              {experiments.map((e, i) => (
+                <tr key={i} className="experiment-row">
+                  <td>{e.timestamp?.substring(0, 19)}</td>
+                  <td><span className="tag">{e.commit}</span></td>
+                  <td>{e.alpha}</td>
+                  <td>{e.normalization}</td>
+                  <td className={scoreClass(parseFloat(e.ndcg_at_10))}>{parseFloat(e.ndcg_at_10).toFixed(4)}</td>
+                  <td className={scoreClass(parseFloat(e.recall_at_10))}>{parseFloat(e.recall_at_10).toFixed(4)}</td>
+                  <td className={scoreClass(parseFloat(e.mrr_at_10))}>{parseFloat(e.mrr_at_10).toFixed(4)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---- Debug Page ----
+function DebugPage() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/logs`).then(r => r.json()).then(data => { setLogs(data || []); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <div>
+      <div className="page-title">🐛 Debug Logs</div>
+      <div className="page-sub">Structured query logs with latency, errors, and request metadata</div>
+      <div className="card">
+        <div className="card-title">Recent Query Logs</div>
+        {loading ? <div className="loading">Loading logs...</div> : (
+          <div className="debug-log">
+            {logs.length === 0 ? <div className="log-line">No logs yet.</div> :
+              logs.map((l, i) => (
+                <div key={i} className={`log-line ${l.error ? "log-error" : "log-ok"}`}>
+                  [{l.created_at?.substring(0,19)}] {l.error ? "❌" : "✅"} query="{l.query}" latency={l.latency_ms?.toFixed(1)}ms results={l.result_count} alpha={l.alpha} {l.error ? `ERROR: ${l.error}` : ""}
+                </div>
+              ))
+            }
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---- App ----
+function App() {
+  const [page, setPage] = useState("search");
+  const pages = { search: <SearchPage />, kpi: <KPIPage />, eval: <EvalPage />, debug: <DebugPage /> };
+  return (
+    <div>
+      <Sidebar page={page} setPage={setPage} />
+      <div className="main">{pages[page]}</div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
