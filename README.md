@@ -8,7 +8,7 @@ Built with FastAPI, sentence-transformers, FAISS, and React.
 ## ⚡ Quickstart (< 5 minutes)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/knowledge-search-dashboard.git
+git clone https://github.com/Pamminarzary/KPI_dashboard.git
 cd knowledge-search-dashboard
 ./up.sh
 ```
@@ -182,3 +182,7 @@ knowledge-search-dashboard/
 ├── up.sh                   # One-command startup
 └── requirements.txt
 ```
+
+### 🔹 Project Snapshot
+
+![snapshot of dashboard](https://github.com/Pamminarzary/Heartrate-Monitoring-using-rPPG/blob/main/homepage.png)
